@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import type { BlockStatus, TimelineBlock } from "../data";
 
-interface StatusMeta {
+export interface StatusMeta {
   label: string;
   color: string; // 텍스트/아이콘/노드
   bg: string; // 배경 틴트
@@ -19,7 +19,7 @@ interface StatusMeta {
 }
 
 /** 색 + 아이콘 + 라벨을 항상 함께(색맹 배려, WCAG). 놓침·이월·패스는 회색 계열. */
-const STATUS: Record<BlockStatus, StatusMeta> = {
+export const STATUS: Record<BlockStatus, StatusMeta> = {
   done: { label: "완료", color: "var(--e-done)", bg: "var(--e-done-bg)", Icon: Check },
   active: { label: "지금", color: "var(--e-active)", bg: "var(--e-active-bg)", Icon: Play },
   planned: { label: "예정", color: "var(--e-planned)", bg: "var(--e-planned-bg)", Icon: Circle },
@@ -159,7 +159,7 @@ function TimelineRow({
   );
 }
 
-function StatusPill({ meta }: { meta: StatusMeta }) {
+export function StatusPill({ meta }: { meta: StatusMeta }) {
   const { Icon } = meta;
   return (
     <span

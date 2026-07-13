@@ -16,7 +16,13 @@ const TABS: Tab[] = [
   { id: "more", label: "더보기", Icon: LayoutGrid },
 ];
 
-export function BottomTabBar({ active = "today" }: { active?: string }) {
+export function BottomTabBar({
+  active = "today",
+  onSelect,
+}: {
+  active?: string;
+  onSelect?: (id: string) => void;
+}) {
   return (
     <nav
       className="absolute inset-x-0 bottom-0 z-20 border-t border-[var(--e-border)] bg-[var(--e-surface)]/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur"
@@ -29,6 +35,7 @@ export function BottomTabBar({ active = "today" }: { active?: string }) {
             <li key={id} className="flex-1">
               <button
                 type="button"
+                onClick={() => onSelect?.(id)}
                 aria-current={on ? "page" : undefined}
                 className="flex min-h-[var(--e-touch)] w-full flex-col items-center justify-center gap-0.5 py-2"
                 style={{ color: on ? "var(--e-primary-deep)" : "var(--e-text-subtle)" }}

@@ -1,24 +1,24 @@
 import { useState } from "react";
-import { Signal, Wifi, BatteryFull } from "lucide-react";
 import "./eddie.css";
 import { EddieClock } from "./components/EddieClock";
 import { DepartureCountdown } from "./components/DepartureCountdown";
 import { TodayTimeline } from "./components/TodayTimeline";
 import { TopTasks } from "./components/TopTasks";
 import { MedicationCard } from "./components/MedicationCard";
-import { BottomTabBar } from "./components/BottomTabBar";
-import { QuickCaptureFab } from "./components/QuickCaptureFab";
 import { TaskSuggestModal } from "./components/TaskSuggestModal";
 import { RecoveryModal, type RecoveryAction } from "./components/RecoveryModal";
 import { HIDDEN_TASK_COUNT, MEDS, TASKS, TIMELINE } from "./data";
 import type { TimelineBlock, TodayTask } from "./data";
 import type { SuggestedSlot } from "./suggest";
-import { formatHHMM, useNow } from "./useNow";
 
 /**
- * 에디의 하루 · '오늘 탭' 화면 (390×844).
+ * 에디의 하루 · '오늘 탭' 화면.
  * 구성: 에디 시계 + 출발 카운트다운 + 오늘 타임라인 + 할 일 3개 + 복약 카드.
  * + 우선 설계 화면 2·3순위 모달: 할 일→타임블록 제안 / 실패·회복.
+ *
+ * 프레임(상태바·하단탭·FAB)은 AppFrame이 제공 — 이 컴포넌트는
+ * <main>과 모달만 반환한다(모달은 항상 <main>의 형제여야 프레임 전체를
+ * 덮을 수 있음 — AppFrame 주석 참고).
  *
  * 금지 패턴 준수:
  *  - 자책 문구 없음(놓침·이월은 담백/회복 톤).
@@ -77,49 +77,36 @@ export function EddieTodayScreen() {
   };
 
   return (
-    <div className="grid min-h-[100dvh] w-full place-items-center bg-[#EFE7DD] p-0 sm:p-6">
-      {/* 디바이스 프레임 */}
-      <div className="eddie-app relative flex h-[100dvh] w-full max-w-[390px] flex-col overflow-hidden bg-[var(--e-bg)] sm:h-[844px] sm:rounded-[44px] sm:shadow-[0_30px_70px_rgba(80,50,20,.28)] sm:ring-1 sm:ring-black/5">
-        <StatusBar />
+    <>
+      <main className="eddie-scroll flex-1 overflow-y-auto pb-[150px]">
+        <EddieClock mood="cheer" greeting={greetingFor(new Date())} />
 
-        {/* 스크롤 영역 (하단 탭바 + FAB 공간 확보) */}
-        <main className="eddie-scroll flex-1 overflow-y-auto pb-[150px]">
-          <EddieClock mood="cheer" greeting={greetingFor(new Date())} />
+        <div className="space-y-5">
+          <DepartureCountdown />
+          <TodayTimeline blocks={timeline} onRecover={setRecoveryBlock} />
+          <TopTasks tasks={tasks} hiddenCount={HIDDEN_TASK_COUNT} onSchedule={setSuggestTask} />
+          <MedicationCard meds={MEDS} />
+          <Footer />
+        </div>
+      </main>
 
-          <div className="space-y-5">
-            <DepartureCountdown />
-            <TodayTimeline blocks={timeline} onRecover={setRecoveryBlock} />
-            <TopTasks
-              tasks={tasks}
-              hiddenCount={HIDDEN_TASK_COUNT}
-              onSchedule={setSuggestTask}
-            />
-            <MedicationCard meds={MEDS} />
-            <Footer />
-          </div>
-        </main>
+      {/* 우선 설계 화면 2순위 — 할 일→타임블록 제안 모달 */}
+      <TaskSuggestModal
+        task={suggestTask}
+        open={suggestTask !== null}
+        onClose={() => setSuggestTask(null)}
+        onAccept={acceptSuggestion}
+        onDefer={deferTaskToTomorrow}
+      />
 
-        <QuickCaptureFab />
-        <BottomTabBar active="today" />
-
-        {/* 우선 설계 화면 2순위 — 할 일→타임블록 제안 모달 */}
-        <TaskSuggestModal
-          task={suggestTask}
-          open={suggestTask !== null}
-          onClose={() => setSuggestTask(null)}
-          onAccept={acceptSuggestion}
-          onDefer={deferTaskToTomorrow}
-        />
-
-        {/* 우선 설계 화면 3순위 — 실패·회복 모달(Flow 4, 가장 중요) */}
-        <RecoveryModal
-          block={recoveryBlock}
-          open={recoveryBlock !== null}
-          onClose={() => setRecoveryBlock(null)}
-          onResolve={resolveRecovery}
-        />
-      </div>
-    </div>
+      {/* 우선 설계 화면 3순위 — 실패·회복 모달(Flow 4, 가장 중요) */}
+      <RecoveryModal
+        block={recoveryBlock}
+        open={recoveryBlock !== null}
+        onClose={() => setRecoveryBlock(null)}
+        onResolve={resolveRecovery}
+      />
+    </>
   );
 }
 
@@ -137,21 +124,6 @@ function sortByTime(blocks: TimelineBlock[]): TimelineBlock[] {
     if (pb !== null) return 1;
     return 0;
   });
-}
-
-/** iOS 풍 상태바(목업) — 모바일 프레임 현실감. */
-function StatusBar() {
-  const now = useNow(15_000);
-  return (
-    <div className="flex items-center justify-between px-6 pt-3 pb-1 text-[13px] font-bold text-[var(--e-text)]">
-      <span className="eddie-num">{formatHHMM(now)}</span>
-      <div className="flex items-center gap-1.5">
-        <Signal size={15} strokeWidth={2.6} aria-hidden />
-        <Wifi size={15} strokeWidth={2.6} aria-hidden />
-        <BatteryFull size={18} strokeWidth={2} aria-hidden />
-      </div>
-    </div>
-  );
 }
 
 function Footer() {
