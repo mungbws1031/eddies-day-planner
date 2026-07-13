@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------
+   브랜드 토큰(--e-*)은 src/eddie.css의 .eddie-app 스코프 안에서 정의된다.
+   여긴 앱 전역 베이스 리셋만 둔다.
+   --------------------------------------------------------------------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* 모션 줄이기 선호 존중 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
