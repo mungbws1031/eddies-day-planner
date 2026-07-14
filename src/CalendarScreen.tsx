@@ -13,7 +13,6 @@ import {
   weekdayLabel,
   type CalendarEvent,
 } from "./calendarData";
-import type { BlockStatus } from "./data";
 
 type Mode = "week" | "month";
 
@@ -291,13 +290,14 @@ function MonthView({
   const gridStart = useMemo(() => monthGridStart(monthCursor), [monthCursor]);
   const cells = useMemo(() => Array.from({ length: 42 }, (_, i) => addDays(gridStart, i)), [gridStart]);
 
-  const statusByDay = useMemo(() => {
-    const m = new Map<string, BlockStatus[]>();
+  const eventsByDay = useMemo(() => {
+    const m = new Map<string, CalendarEvent[]>();
     for (const e of events) {
       const arr = m.get(e.dateKey) ?? [];
-      arr.push(e.status);
+      arr.push(e);
       m.set(e.dateKey, arr);
     }
+    for (const arr of m.values()) arr.sort((a, b) => a.time.localeCompare(b.time));
     return m;
   }, [events]);
 
@@ -335,22 +335,26 @@ function MonthView({
         ))}
       </div>
 
-      {/* 날짜 그리드 */}
-      <div className="grid grid-cols-7 gap-y-1">
+      {/* 날짜 그리드 — 칸 안에 일정 칩 직접 표시(참고 스크린샷 레이아웃 반영). */}
+      <div className="grid grid-cols-7 gap-x-px gap-y-px border-t border-l border-[var(--e-border)]">
         {cells.map((d) => {
           const inMonth = d.getMonth() === monthCursor.getMonth();
           const isToday = isSameDay(d, today);
           const isSel = isSameDay(d, selected);
-          const statuses = statusByDay.get(dateKey(d)) ?? [];
+          const dayEvts = eventsByDay.get(dateKey(d)) ?? [];
+          const shown = dayEvts.slice(0, 2);
+          const hiddenCount = dayEvts.length - shown.length;
+
           return (
             <button
               key={dateKey(d)}
               type="button"
               onClick={() => onPickDay(d)}
-              className="flex h-12 flex-col items-center justify-start gap-1 pt-1"
+              className="flex min-h-[68px] flex-col items-stretch gap-0.5 border-b border-r border-[var(--e-border)] p-1 text-left"
+              style={{ background: isSel ? "var(--e-primary-weak)" : "var(--e-surface)" }}
             >
               <span
-                className="eddie-num flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-bold"
+                className="eddie-num flex h-5 w-5 items-center justify-center self-start rounded-full text-[11px] font-bold"
                 style={{
                   background: isSel ? "var(--e-primary)" : "transparent",
                   color: isSel
@@ -364,14 +368,22 @@ function MonthView({
               >
                 {d.getDate()}
               </span>
-              <span className="flex h-1.5 items-center gap-0.5">
-                {statuses.slice(0, 3).map((s, i) => (
+
+              <span className="flex flex-col gap-0.5" style={{ opacity: inMonth ? 1 : 0.5 }}>
+                {shown.map((e) => (
                   <span
-                    key={i}
-                    className="h-1 w-1 rounded-full"
-                    style={{ background: STATUS[s].color }}
-                  />
+                    key={e.id}
+                    className="truncate rounded-[3px] px-1 py-px text-[9px] font-bold leading-tight"
+                    style={{ background: STATUS[e.status].bg, color: STATUS[e.status].color }}
+                  >
+                    {e.title}
+                  </span>
                 ))}
+                {hiddenCount > 0 && (
+                  <span className="text-[9px] font-bold text-[var(--e-text-subtle)]">
+                    +{hiddenCount}
+                  </span>
+                )}
               </span>
             </button>
           );
